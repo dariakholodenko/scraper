@@ -4,6 +4,7 @@ import xlwt
 from xlwt import Workbook
 import requests
 import time
+import re
 from bs4 import BeautifulSoup
 
 wb = Workbook()
@@ -29,9 +30,20 @@ headers = {
 session = requests.session()
 url = 'https://www.redbubble.com/shop/mugs'
 response = session.get(url, headers=headers)
+
+def get_page_num(soup):
+	string = soup.find('div', class_="Pagination__numberCounter--3PXW6").text.strip()
+	tulp = re.findall(r'\d+', string)
+	step = int(tulp[1]) - int(tulp[0])
+	total = ""
+	for idx in range(2, len(tulp)):
+		total += tulp[idx]
+	return round(int(total)/step)
+	
 response_all = [response]
 
-for p in range(2,100):
+page_num = get_page_num(BeautifulSoup(response.text, 'html.parser'))
+for p in range(2,page_num):
 	url_p =  url + '?page={}'.format(p)
 	response_app = session.get(url_p, headers=headers)
 	response_all.append(response_app)
@@ -51,3 +63,4 @@ for r in response_all:
 		sheet.write(i, 2, link)
 
 wb.save('redbubble.xls')
+
